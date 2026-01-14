@@ -13,29 +13,50 @@ interface ChatInterfaceProps {
 export function ChatInterface({ group, onMessageSent, onFinished }: ChatInterfaceProps) {
     // Azure TTS function
     const playAzureTTS = async (text: string) => {
+        console.log('🎙️ Azure TTS triggered with text:', text.substring(0, 50) + '...');
         try {
+            console.log('📡 Fetching /api/tts...');
             const response = await fetch('/api/tts', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text }),
             });
 
+            console.log('📥 TTS API response status:', response.status);
+
             if (!response.ok) {
-                console.error('TTS API failed:', response.status);
+                const errorText = await response.text();
+                console.error('❌ TTS API failed:', response.status, errorText);
+                console.log('⚠️ Falling back to browser TTS');
+                // Fallback to browser TTS
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'tr-TR';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
                 return;
             }
 
+            console.log('✅ TTS API success, creating audio...');
             const audioBlob = await response.blob();
+            console.log('🎵 Audio blob size:', audioBlob.size, 'bytes');
             const audioUrl = URL.createObjectURL(audioBlob);
             const audio = new Audio(audioUrl);
 
             audio.onended = () => {
+                console.log('🔚 Audio playback ended');
                 URL.revokeObjectURL(audioUrl);
             };
 
-            audio.play().catch(err => console.error('Audio play error:', err));
+            console.log('▶️ Playing Azure TTS audio...');
+            audio.play().catch(err => console.error('❌ Audio play error:', err));
         } catch (error) {
-            console.error('Azure TTS error:', error);
+            console.error('❌ Azure TTS error:', error);
+            console.log('⚠️ Falling back to browser TTS');
+            // Fallback to browser TTS
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'tr-TR';
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
         }
     };
 
