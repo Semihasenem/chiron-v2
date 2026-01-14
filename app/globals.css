@@ -1,8 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #F7F9F8; /* sage-50 */
+  --foreground: #354F52; /* sage-800 */
+  
+  /* Custom Palette Variables */
+  --sage-50: #F7F9F8;
+  --sage-100: #E8EFEC;
+  --sage-500: #84A98C;
+  --sage-800: #354F52;
+  --lavender-500: #E0B1CB;
 }
 
 @theme inline {
@@ -10,12 +17,23 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Extend Theme with Custom Colors */
+  --color-sage-50: var(--sage-50);
+  --color-sage-100: var(--sage-100);
+  --color-sage-500: var(--sage-500);
+  --color-sage-800: var(--sage-800);
+  --color-lavender-500: var(--lavender-500);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* For now keeping the same light theme as requested, or slight adjustment if needed. 
+       The user requested specific "Sage Green & Lavender" palette (bg-sage-50, text-slate-800/sage-800).
+       I will stick to the requested identity for both modes to ensure consistency or just override dark mode for now.
+    */
+    --background: #F7F9F8; 
+    --foreground: #354F52;
   }
 }
 
