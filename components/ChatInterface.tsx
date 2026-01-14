@@ -42,7 +42,7 @@ export function ChatInterface({ group, onMessageSent, onFinished }: ChatInterfac
     };
 
     console.log('useChat config:', chatConfig);
-    const { messages, status, sendMessage } = useChat(chatConfig);
+    const { messages, status, append } = useChat(chatConfig);
 
     const [localInput, setLocalInput] = useState('');
     const isLoading = status === 'submitted' || status === 'streaming';
@@ -56,12 +56,12 @@ export function ChatInterface({ group, onMessageSent, onFinished }: ChatInterfac
             hasStarted.current = true;
 
             try {
-                sendMessage('START_SESSION');
+                append({ role: 'user', content: 'START_SESSION' });
             } catch (err) {
                 console.error('Auto-start error:', err);
             }
         }
-    }, [messages.length, sendMessage]);
+    }, [messages.length, append]);
 
     // Auto-scroll
     useEffect(() => {
@@ -72,7 +72,7 @@ export function ChatInterface({ group, onMessageSent, onFinished }: ChatInterfac
     const handleVoiceInput = (text: string) => {
         if (!isLoading) {
             try {
-                sendMessage(text);
+                append({ role: 'user', content: text });
                 onMessageSent('user', text);
             } catch (e) {
                 console.error('Voice send error:', e);
@@ -88,7 +88,7 @@ export function ChatInterface({ group, onMessageSent, onFinished }: ChatInterfac
             onMessageSent('user', text);
 
             try {
-                sendMessage(text);
+                append({ role: 'user', content: text });
             } catch (e) {
                 console.error('Form send error:', e);
             }
