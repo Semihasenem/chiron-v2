@@ -30,9 +30,35 @@ export function ChatInterface({ group, onMessageSent, onFinished }: ChatInterfac
             if (textContent) {
                 onMessageSent('ai', textContent);
                 if (group === 'voice' && typeof window !== 'undefined') {
-                    const utterance = new SpeechSynthesisUtterance(textContent);
-                    utterance.lang = 'tr-TR';
-                    window.speechSynthesis.speak(utterance);
+                    // Wait for voices to load
+                    const speakText = () => {
+                        const utterance = new SpeechSynthesisUtterance(textContent);
+                        utterance.lang = 'tr-TR';
+
+                        // Get available Turkish voices
+                        const voices = window.speechSynthesis.getVoices();
+                        const turkishVoice = voices.find(voice =>
+                            voice.lang.startsWith('tr') || voice.lang.startsWith('tr-TR')
+                        );
+
+                        if (turkishVoice) {
+                            utterance.voice = turkishVoice;
+                        }
+
+                        // Optimize settings for more natural sound
+                        utterance.rate = 0.9; // Slightly slower for clarity
+                        utterance.pitch = 1.0; // Natural pitch
+                        utterance.volume = 1.0; // Full volume
+
+                        window.speechSynthesis.speak(utterance);
+                    };
+
+                    // Ensure voices are loaded
+                    if (window.speechSynthesis.getVoices().length === 0) {
+                        window.speechSynthesis.addEventListener('voiceschanged', speakText, { once: true });
+                    } else {
+                        speakText();
+                    }
                 }
             }
         },
