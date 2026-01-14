@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { useChat } from '@ai-sdk/react';
+import { useChat } from 'ai/react';
 import { Send, User, Bot } from 'lucide-react';
 import { VoiceRecorder } from './VoiceRecorder';
 
