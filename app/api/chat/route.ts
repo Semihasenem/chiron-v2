@@ -1,6 +1,6 @@
 
 import { google } from '@ai-sdk/google';
-import { streamText, Message } from "ai";
+import { streamText } from "ai";
 
 // Ensure API key is present
 const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
