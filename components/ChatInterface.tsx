@@ -11,6 +11,34 @@ interface ChatInterfaceProps {
 }
 
 export function ChatInterface({ group, onMessageSent, onFinished }: ChatInterfaceProps) {
+    // Azure TTS function
+    const playAzureTTS = async (text: string) => {
+        try {
+            const response = await fetch('/api/tts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text }),
+            });
+
+            if (!response.ok) {
+                console.error('TTS API failed:', response.status);
+                return;
+            }
+
+            const audioBlob = await response.blob();
+            const audioUrl = URL.createObjectURL(audioBlob);
+            const audio = new Audio(audioUrl);
+
+            audio.onended = () => {
+                URL.revokeObjectURL(audioUrl);
+            };
+
+            audio.play().catch(err => console.error('Audio play error:', err));
+        } catch (error) {
+            console.error('Azure TTS error:', error);
+        }
+    };
+
     const chatConfig = {
         api: '/api/chat',
         body: {},
@@ -30,35 +58,8 @@ export function ChatInterface({ group, onMessageSent, onFinished }: ChatInterfac
             if (textContent) {
                 onMessageSent('ai', textContent);
                 if (group === 'voice' && typeof window !== 'undefined') {
-                    // Wait for voices to load
-                    const speakText = () => {
-                        const utterance = new SpeechSynthesisUtterance(textContent);
-                        utterance.lang = 'tr-TR';
-
-                        // Get available Turkish voices
-                        const voices = window.speechSynthesis.getVoices();
-                        const turkishVoice = voices.find(voice =>
-                            voice.lang.startsWith('tr') || voice.lang.startsWith('tr-TR')
-                        );
-
-                        if (turkishVoice) {
-                            utterance.voice = turkishVoice;
-                        }
-
-                        // Optimize settings for more natural sound
-                        utterance.rate = 0.9; // Slightly slower for clarity
-                        utterance.pitch = 1.0; // Natural pitch
-                        utterance.volume = 1.0; // Full volume
-
-                        window.speechSynthesis.speak(utterance);
-                    };
-
-                    // Ensure voices are loaded
-                    if (window.speechSynthesis.getVoices().length === 0) {
-                        window.speechSynthesis.addEventListener('voiceschanged', speakText, { once: true });
-                    } else {
-                        speakText();
-                    }
+                    // Use Azure TTS for voice output
+                    playAzureTTS(textContent);
                 }
             }
         },
