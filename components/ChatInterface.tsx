@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { useChat } from 'ai/react';
+import { useChat } from '@ai-sdk/react';
 import { Send, User, Bot } from 'lucide-react';
 import { VoiceRecorder } from './VoiceRecorder';
 
@@ -22,15 +22,15 @@ export function ChatInterface({ group, onMessageSent, onFinished }: ChatInterfac
         onFinish: (message: any) => {
             console.log('onFinish called with message:', message);
             console.log('Message role:', message?.role);
-            console.log('Message content:', message?.content);
-            console.log('Message parts:', message?.message?.parts);
+            console.log('Message parts:', message?.parts);
             console.log('Full message object:', JSON.stringify(message, null, 2));
-            // The message structure is nested in the response
+            // Extract text from parts
             const actualMessage = message?.message || message;
-            if (actualMessage && actualMessage.content) {
-                onMessageSent('ai', actualMessage.content);
+            const textContent = actualMessage?.parts?.map((p: any) => p.text).filter(Boolean).join('') || '';
+            if (textContent) {
+                onMessageSent('ai', textContent);
                 if (group === 'voice' && typeof window !== 'undefined') {
-                    const utterance = new SpeechSynthesisUtterance(actualMessage.content);
+                    const utterance = new SpeechSynthesisUtterance(textContent);
                     utterance.lang = 'tr-TR';
                     window.speechSynthesis.speak(utterance);
                 }
@@ -42,7 +42,7 @@ export function ChatInterface({ group, onMessageSent, onFinished }: ChatInterfac
     };
 
     console.log('useChat config:', chatConfig);
-    const { messages, status, append } = useChat(chatConfig);
+    const { messages, status, sendMessage } = useChat(chatConfig);
 
     const [localInput, setLocalInput] = useState('');
     const isLoading = status === 'submitted' || status === 'streaming';
@@ -56,12 +56,12 @@ export function ChatInterface({ group, onMessageSent, onFinished }: ChatInterfac
             hasStarted.current = true;
 
             try {
-                append({ role: 'user', content: 'START_SESSION' });
+                sendMessage({ text: 'START_SESSION' });
             } catch (err) {
                 console.error('Auto-start error:', err);
             }
         }
-    }, [messages.length, append]);
+    }, [messages.length, sendMessage]);
 
     // Auto-scroll
     useEffect(() => {
@@ -72,7 +72,7 @@ export function ChatInterface({ group, onMessageSent, onFinished }: ChatInterfac
     const handleVoiceInput = (text: string) => {
         if (!isLoading) {
             try {
-                append({ role: 'user', content: text });
+                sendMessage({ text: text });
                 onMessageSent('user', text);
             } catch (e) {
                 console.error('Voice send error:', e);
@@ -88,7 +88,7 @@ export function ChatInterface({ group, onMessageSent, onFinished }: ChatInterfac
             onMessageSent('user', text);
 
             try {
-                append({ role: 'user', content: text });
+                sendMessage({ text: text });
             } catch (e) {
                 console.error('Form send error:', e);
             }
@@ -96,8 +96,10 @@ export function ChatInterface({ group, onMessageSent, onFinished }: ChatInterfac
     };
 
     // Filter out the system trigger message from UI
-    // @ts-ignore
-    const visibleMessages = messages.filter(m => m.content !== 'START_SESSION');
+    const visibleMessages = messages.filter(m => {
+        const text = m.parts?.map((p: any) => p.text).filter(Boolean).join('') || '';
+        return text !== 'START_SESSION';
+    });
 
     console.log('Messages:', messages);
     console.log('Messages length:', messages.length);
@@ -155,7 +157,7 @@ export function ChatInterface({ group, onMessageSent, onFinished }: ChatInterfac
                                 : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
                                 }`}
                         >
-                            {m.content || (m.parts && m.parts.map((p: any) => p.text).join('')) || JSON.stringify(m)}
+                            {m.parts && m.parts.map((p: any) => p.text).filter(Boolean).join('')}
                         </div>
                     </div>
                 ))}
