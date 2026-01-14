@@ -36,20 +36,11 @@ export async function POST(req: Request) {
         const token = await tokenResponse.text();
 
         // Generate speech using SSML for better control
-        // Add natural pauses for therapeutic tone
-        const processedText = text
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/\./g, '.<break time="400ms"/>')  // Pause after sentences
-            .replace(/\?/g, '?<break time="500ms"/>')  // Longer pause after questions
-            .replace(/,/g, ',<break time="200ms"/>');  // Short pause after commas
-
         const ssml = `
             <speak version='1.0' xml:lang='tr-TR'>
                 <voice name='tr-TR-EmelNeural'>
-                    <prosody rate='0.88' pitch='0%'>
-                        ${processedText}
+                    <prosody rate='0.95' pitch='0%'>
+                        ${text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}
                     </prosody>
                 </voice>
             </speak>
