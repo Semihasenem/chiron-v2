@@ -56,7 +56,7 @@ export function ChatInterface({ group, onMessageSent, onFinished }: ChatInterfac
             hasStarted.current = true;
 
             try {
-                sendMessage({ role: 'user', content: 'START_SESSION' });
+                sendMessage('START_SESSION');
             } catch (err) {
                 console.error('Auto-start error:', err);
             }
@@ -72,7 +72,7 @@ export function ChatInterface({ group, onMessageSent, onFinished }: ChatInterfac
     const handleVoiceInput = (text: string) => {
         if (!isLoading) {
             try {
-                sendMessage({ role: 'user', content: text });
+                sendMessage(text);
                 onMessageSent('user', text);
             } catch (e) {
                 console.error('Voice send error:', e);
@@ -88,7 +88,7 @@ export function ChatInterface({ group, onMessageSent, onFinished }: ChatInterfac
             onMessageSent('user', text);
 
             try {
-                sendMessage({ role: 'user', content: text });
+                sendMessage(text);
             } catch (e) {
                 console.error('Form send error:', e);
             }
