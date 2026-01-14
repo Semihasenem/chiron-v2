@@ -45,37 +45,35 @@ export async function POST(req: Request) {
         }
         console.log('API Key present (starts with):', apiKey.substring(0, 5) + '...');
 
-        // Clean messages - only keep role and content, filter out invalid and START_SESSION messages
+        // Extract text from UIMessage parts
+        const extractText = (msg: any): string => {
+            if (msg.parts && Array.isArray(msg.parts)) {
+                return msg.parts.map((p: any) => p.text || '').filter(Boolean).join('');
+            }
+            return msg.content || '';
+        };
+
+        // Check if this is the initial START_SESSION trigger
+        const hasStartSession = messages.some((msg: any) => extractText(msg) === 'START_SESSION');
+
+        // Clean messages - filter out START_SESSION and convert to content format
         const cleanMessages = messages
+            .map((msg: any) => ({
+                role: msg.role,
+                content: extractText(msg)
+            }))
             .filter((msg: any) => {
-                // Filter out START_SESSION
+                // Filter out START_SESSION from message history
                 if (msg.content === 'START_SESSION') return false;
-
-                // Keep assistant messages even if content is empty (might have parts)
-                if (msg.role === 'assistant') return true;
-
-                // For user messages, require non-empty content
+                // Keep messages with content
                 return msg.content && msg.content.trim() !== '';
-            })
-            .map((msg: any) => {
-                // For assistant messages, extract content from parts if needed
-                let content = msg.content;
-                if (msg.role === 'assistant' && (!content || content === '') && msg.parts) {
-                    content = msg.parts.map((p: any) => p.text || '').join('');
-                }
+            });
 
-                return {
-                    role: msg.role,
-                    content: content || ''
-                };
-            })
-            .filter((msg: any) => msg.content && msg.content.trim() !== ''); // Final filter for empty messages
-
-        // If no messages after filtering (first START_SESSION call), add a trigger message
-        if (cleanMessages.length === 0) {
+        // If this is the first START_SESSION call (no other messages), send START_SESSION to trigger the prompt
+        if (hasStartSession && cleanMessages.length === 0) {
             cleanMessages.push({
                 role: 'user',
-                content: 'Merhaba'
+                content: 'START_SESSION'
             });
         }
 

@@ -29,26 +29,13 @@ export default function InfoPage() {
                         <div>
                             <h3 className="font-semibold text-sage-800">Araştırma Sorumlusu</h3>
                             <p className="text-slate-600">Semiha Çelik </p>
-                            <p className="text-sm text-slate-500 mt-1">Marmara Üniversitesi Psikoloji Bölümü 3. Sınıf</p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-start gap-4 p-4 bg-sage-50 rounded-xl">
-                        <Shield className="w-6 h-6 text-sage-600 mt-1 flex-shrink-0" />
-                        <div>
-                            <h3 className="font-semibold text-sage-800">Gizlilik ve Güvenlik</h3>
-                            <p className="text-slate-600">
-                                Bu çalışma tamamen anonimdir. Görüşmeleriniz yapay zeka tarafından işlenir ancak
-                                kimliğinizle eşleştirilmez. Toplanan veriler sadece bilimsel analiz için kullanılacaktır.
-                            </p>
+                            <p className="text-sm text-slate-500 mt-1">Marmara Üniversitesi Psikoloji (İngilizce) Bölümü 3. Sınıf</p>
                         </div>
                     </div>
 
                     <div className="prose prose-sage text-slate-600 leading-relaxed">
                         <p>
-                            Bu çalışmanın amacı, yapay zeka destekli bir sohbet arayüzü (Chiron) ile iletişimde
-                            iletişim yönteminin duygu düzenleme verimlimliği üzerindeki etkisini incelemektir.
-                            Katılımınız yaklaşık **20 dakika** sürecektir.
+                            Bu çalışmanın amacı, yapay zeka destekli bir sohbet arayüzü (Chiron) ile iletişimde, iletişim yönteminin (yazılı/sözlü) duygu düzenleme verimliliği üzerindeki etkisini incelemektir. Katılımınız yaklaşık **20 dakika** sürecektir.
                         </p>
                     </div>
                 </div>

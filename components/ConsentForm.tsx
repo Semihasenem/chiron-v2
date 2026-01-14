@@ -12,7 +12,7 @@ export function ConsentForm({ onConsent }: ConsentFormProps) {
 
             <div className="prose prose-sm text-gray-700 mb-8 max-h-[60vh] overflow-y-auto pr-2">
                 <h3 className="text-lg font-semibold text-teal-700 mt-4">Çalışmanın Adı</h3>
-                <p>Yapay Zeka Destekli Terapötik Uygulamalarda İletişim Modunun (Sözlü/Yazılı) Duygu Düzenleme Verimliliğine Etkisi</p>
+<p>Yapay Zeka Destekli Terapötik Uygulamalarda İletişim Modunun (Yazılı/Sözlü) Duygu Düzenleme Verimliliği Üzerindeki Etkisi Çalışması</p>
 
                 <h3 className="text-lg font-semibold text-teal-700 mt-4">Çalışmanın Amacı</h3>
                 <p>Bu araştırma, yapay zeka destekli bir terapötik ajanla (Chiron) etkileşim modunun (konuşma veya yazışma) duygu düzenleme ve bilişsel çaba üzerindeki etkisini analiz etmeyi amaçlamaktadır.</p>
@@ -20,9 +20,9 @@ export function ConsentForm({ onConsent }: ConsentFormProps) {
                 <h3 className="text-lg font-semibold text-teal-700 mt-4">Prosedür</h3>
                 <p>Katılmayı kabul ederseniz, aşağıdaki adımları tamamlamanız istenecektir:</p>
                 <ol className="list-decimal pl-5 space-y-2">
-                    <li><strong>Stresli Bir Olayı Hatırlama:</strong> Son 30 gün içinde yaşadığınız, sizde stres veya kaygı yaratan bir olayı zihninizde canlandırmanız ve o anki huzursuzluk seviyenizi puanlamanız istenecektir. (Bu olayı yazmanız istenmeyecektir).</li>
+                    <li><strong>Stresli Bir Olayı Hatırlama:</strong> Son 30 gün içinde yaşadığınız, sizde stres veya kaygı yaratan bir olayı zihninizde canlandırmanız ve o anki huzursuzluk seviyenizi puanlamanız istenecektir.</li>
                     <li><strong>Sıkıntı Düzeyini Puanlama:</strong> Mevcut stres seviyenizi 0-100 arası bir ölçekte puanlayacaksınız.</li>
-                    <li><strong>Müdahale:</strong> "Chiron" adlı AI asistanı ile yaklaşık <strong>20 dakika</strong> etkileşime gireceksiniz. Rastgele olarak ya <strong>yazışarak</strong> ya da <strong>konuşarak</strong> iletişim kuracaksınız.</li>
+                    <li><strong>Müdahale:</strong> "Chiron" adlı AI asistanı ile yaklaşık <strong>20 dakika</strong> etkileşime gireceksiniz. Ya <strong>yazışarak</strong> ya da <strong>konuşarak</strong> iletişim kuracaksınız.</li>
                     <li><strong>Son Değerlendirme:</strong> Etkileşimden sonra tekrar stres seviyenizi ve harcadığınız zihinsel çabayı puanlayacaksınız.</li>
                 </ol>
                 <p className="font-medium mt-2">Toplam süre yaklaşık 20 dakikadır.</p>
