@@ -42,7 +42,7 @@ export function ChatInterface({ group, onMessageSent, onFinished }: ChatInterfac
     };
 
     console.log('useChat config:', chatConfig);
-    const { messages, status, sendMessage, input: chatInput, handleSubmit } = useChat(chatConfig);
+    const { messages, status, sendMessage } = useChat(chatConfig);
 
     const [localInput, setLocalInput] = useState('');
     const isLoading = status === 'submitted' || status === 'streaming';
