@@ -12,53 +12,60 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase (singleton pattern)
-// Initialize Firebase (singleton pattern)
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 export const db = getFirestore(app);
 
 // Collection Reference
-export const EXPERIMENTS_COLLECTION = "experiments";
+export const CONVERSATIONS_COLLECTION = "conversations";
 
 /**
- * Saves the initial experiment data (consent, baseline, group assignment).
+ * Creates a new conversation session.
  */
-export async function createExperimentSession(data: any) {
+export async function createConversationSession(sessionId: string, metadata?: any) {
   try {
-    const docRef = doc(db, EXPERIMENTS_COLLECTION, data.participant_id);
-    await setDoc(docRef, data);
+    const docRef = doc(db, CONVERSATIONS_COLLECTION, sessionId);
+    await setDoc(docRef, {
+      session_id: sessionId,
+      created_at: new Date().toISOString(),
+      messages: [],
+      ...metadata
+    });
     return true;
   } catch (error) {
-    console.error("Error creating experiment session:", error);
+    console.error("Error creating conversation session:", error);
     return false;
   }
 }
 
 /**
- * Appends a new message to the chat log.
+ * Appends a new message to the conversation.
  */
-export async function appendChatLog(participantId: string, message: { role: string; content: string }) {
+export async function appendMessage(sessionId: string, message: { role: string; content: string; timestamp?: string }) {
   try {
-    const docRef = doc(db, EXPERIMENTS_COLLECTION, participantId);
+    const docRef = doc(db, CONVERSATIONS_COLLECTION, sessionId);
     await updateDoc(docRef, {
-      chat_log: arrayUnion(message)
+      messages: arrayUnion({
+        ...message,
+        timestamp: message.timestamp || new Date().toISOString()
+      }),
+      last_updated: new Date().toISOString()
     });
   } catch (error) {
-    console.error("Error appending chat log:", error);
+    console.error("Error appending message:", error);
   }
 }
 
 /**
- * Updates the experiment with post-test data.
+ * Updates conversation session metadata.
  */
-export async function completeExperimentSession(participantId: string, postData: any) {
+export async function updateConversationSession(sessionId: string, updates: any) {
   try {
-    const docRef = doc(db, EXPERIMENTS_COLLECTION, participantId);
+    const docRef = doc(db, CONVERSATIONS_COLLECTION, sessionId);
     await updateDoc(docRef, {
-      post_test: postData,
-      status: "completed",
-      completed_at: new Date().toISOString()
+      ...updates,
+      last_updated: new Date().toISOString()
     });
   } catch (error) {
-    console.error("Error completing experiment:", error);
+    console.error("Error updating conversation:", error);
   }
 }

@@ -75,10 +75,10 @@ export default function LandingPage() {
 
           <motion.div variants={fadeIn} className="pt-8">
             <Link
-              href="/info"
+              href="/chat"
               className="group relative inline-flex items-center gap-3 px-8 py-4 bg-sage-800 text-white rounded-full text-lg font-medium transition-all duration-300 hover:bg-sage-500 hover:shadow-lg hover:shadow-sage-500/20 active:scale-95"
             >
-              Araştırmaya Katıl
+              Sohbete Başla
               <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
             </Link>
           </motion.div>
