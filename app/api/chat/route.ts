@@ -71,7 +71,9 @@ interface Assessment {
     do_not: string;
 }
 
-async function runAssessor(messages: Array<{ role: string; content: string }>): Promise<Assessment | null> {
+type ChatMsg = { role: 'user' | 'assistant'; content: string };
+
+async function runAssessor(messages: ChatMsg[]): Promise<Assessment | null> {
     try {
         const result = await generateText({
             model: google(`models/${MODEL}`),
@@ -137,12 +139,12 @@ export async function POST(req: Request) {
 
         const hasStartSession = messages.some((msg: any) => extractText(msg) === 'START_SESSION');
 
-        const cleanMessages = messages
+        const cleanMessages: ChatMsg[] = messages
             .map((msg: any) => ({
-                role: msg.role,
+                role: msg.role as ChatMsg['role'],
                 content: extractText(msg)
             }))
-            .filter((msg: any) => {
+            .filter((msg: ChatMsg) => {
                 if (msg.content === 'START_SESSION') return false;
                 return msg.content && msg.content.trim() !== '';
             });
