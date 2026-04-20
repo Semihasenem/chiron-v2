@@ -147,6 +147,8 @@ Bu değerlendirmeyi takip et:
 
 Değerlendirmeyi kullanıcıya açıklama. "Sende felaketleştirme tespit ettim" deme. Tekniği doğal sohbet akışında uygula.
 
+KRİTİK KURAL: Yanıtında ASLA [ASSESSMENT] bloğunu, JSON verisini veya değerlendirme çıktısını gösterme. Bu bilgi sadece senin iç rehberin. Kullanıcı bunu ASLA görmemeli. Yanıtın sadece doğal Türkçe sohbet cümleleri içermeli.
+
 # TERAPÖTİK ARAÇLAR
 
 ## SOKRATİK SORGULAMA (Ana Motor)
@@ -233,7 +235,7 @@ interface Assessment {
 async function runAssessor(messages: Array<{ role: string; content: string }>): Promise<Assessment | null> {
     try {
         const result = await generateText({
-            model: google('gemini-2.0-flash'),
+            model: google('models/gemini-2.0-flash'),
             system: ASSESSOR_PROMPT,
             messages: messages,
         });
@@ -320,13 +322,44 @@ export async function POST(req: Request) {
         const therapistSystemPrompt = THERAPIST_PROMPT + assessmentContext;
 
         const result = streamText({
-            model: google('gemini-2.0-flash'),
+            model: google('models/gemini-2.0-flash'),
             system: therapistSystemPrompt,
             messages: cleanMessages,
         });
 
         console.log('Stream created successfully.');
-        return result.toUIMessageStreamResponse();
+
+        // ── Safety net: strip any leaked [ASSESSMENT] blocks from the stream ──
+        const originalStream = result.toTextStreamResponse();
+        const reader = originalStream.body?.getReader();
+        const decoder = new TextDecoder();
+        const encoder = new TextEncoder();
+
+        const filteredStream = new ReadableStream({
+            async pull(controller) {
+                if (!reader) {
+                    controller.close();
+                    return;
+                }
+                const { done, value } = await reader.read();
+                if (done) {
+                    controller.close();
+                    return;
+                }
+                let text = decoder.decode(value, { stream: true });
+                // Strip [ASSESSMENT]...[/ASSESSMENT] blocks (including partial ones)
+                text = text.replace(/\[ASSESSMENT\][\s\S]*?\[\/ASSESSMENT\]\s*/g, '');
+                // Strip orphaned opening tags that might span chunks
+                text = text.replace(/\[ASSESSMENT\][\s\S]*/g, '');
+                if (text.length > 0) {
+                    controller.enqueue(encoder.encode(text));
+                }
+            }
+        });
+
+        return new Response(filteredStream, {
+            headers: originalStream.headers,
+        });
     } catch (error) {
         console.error('Chat API Fatal Error:', error);
         return new Response('Internal Server Error', { status: 500 });
