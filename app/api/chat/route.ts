@@ -189,11 +189,27 @@ export async function POST(req: Request) {
 
         console.log('Stream created successfully.');
 
-        // ── Safety net: strip any leaked [ASSESSMENT] blocks from the stream ──
+        // ── Safety net: strip any leaked [ASSESSMENT] blocks or raw assessment
+        //    JSON from the start of the stream, even when the opening tag is missing.
         const originalStream = result.toTextStreamResponse();
         const reader = originalStream.body?.getReader();
         const decoder = new TextDecoder();
         const encoder = new TextEncoder();
+
+        type FilterMode = 'detecting' | 'stripping' | 'passthrough';
+        let mode: FilterMode = 'detecting';
+        let buffer = '';
+        const MAX_BUFFER = 16_384;
+        const CLOSE_TAG = '[/ASSESSMENT]';
+
+        const bestEffortStrip = (s: string): string => {
+            // Remove a leading [ASSESSMENT]...[/ASSESSMENT] block if present
+            let out = s.replace(/^\s*\[ASSESSMENT\][\s\S]*?\[\/ASSESSMENT\]\s*/, '');
+            if (out !== s) return out;
+            // Remove a leading JSON object (possibly followed by [/ASSESSMENT])
+            out = s.replace(/^\s*\{[\s\S]*?\}\s*(\[\/ASSESSMENT\]\s*)?/, '');
+            return out;
+        };
 
         const filteredStream = new ReadableStream({
             async pull(controller) {
@@ -203,14 +219,52 @@ export async function POST(req: Request) {
                 }
                 const { done, value } = await reader.read();
                 if (done) {
+                    if (buffer) {
+                        const flushed = mode === 'passthrough' ? buffer : bestEffortStrip(buffer);
+                        if (flushed) controller.enqueue(encoder.encode(flushed));
+                    }
                     controller.close();
                     return;
                 }
-                let text = decoder.decode(value, { stream: true });
-                text = text.replace(/\[ASSESSMENT\][\s\S]*?\[\/ASSESSMENT\]\s*/g, '');
-                text = text.replace(/\[ASSESSMENT\][\s\S]*/g, '');
-                if (text.length > 0) {
-                    controller.enqueue(encoder.encode(text));
+
+                const text = decoder.decode(value, { stream: true });
+
+                if (mode === 'passthrough') {
+                    if (text) controller.enqueue(encoder.encode(text));
+                    return;
+                }
+
+                buffer += text;
+
+                if (mode === 'detecting') {
+                    const trimmed = buffer.trimStart();
+                    if (trimmed.length === 0) return;
+                    const first = trimmed[0];
+                    if (first !== '{' && first !== '[') {
+                        // Normal prose — flush and passthrough
+                        if (buffer) controller.enqueue(encoder.encode(buffer));
+                        buffer = '';
+                        mode = 'passthrough';
+                        return;
+                    }
+                    mode = 'stripping';
+                }
+
+                // mode === 'stripping' — wait for [/ASSESSMENT] or give up
+                const closeIdx = buffer.indexOf(CLOSE_TAG);
+                if (closeIdx !== -1) {
+                    const rest = buffer.slice(closeIdx + CLOSE_TAG.length).replace(/^\s+/, '');
+                    if (rest) controller.enqueue(encoder.encode(rest));
+                    buffer = '';
+                    mode = 'passthrough';
+                    return;
+                }
+
+                if (buffer.length >= MAX_BUFFER) {
+                    const flushed = bestEffortStrip(buffer);
+                    if (flushed) controller.enqueue(encoder.encode(flushed));
+                    buffer = '';
+                    mode = 'passthrough';
                 }
             }
         });
