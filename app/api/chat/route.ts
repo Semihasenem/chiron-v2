@@ -2,6 +2,22 @@ import { google } from '@ai-sdk/google';
 import { streamText, generateText } from "ai";
 import { ASSESSOR_PROMPT, THERAPIST_PROMPT } from '@/lib/prompts';
 import { checkRateLimit, getClientIp } from '@/lib/ratelimit';
+import { detectCrisis, CRISIS_RESPONSE } from '@/lib/safety/crisis-keywords';
+
+// Psikoloji chatbot: HARM_CATEGORY_DANGEROUS_CONTENT'i BLOCK_NONE'a çekiyoruz
+// çünkü intihar/kendine zarar konuşan kullanıcıların sessizce bloklanması =
+// en kötü senaryo. Bu konuları Assessor'ın safety_level=1 yolu ve pre-LLM
+// crisis gate (detectCrisis) yönetiyor.
+const SAFETY_SETTINGS = [
+    { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+    { category: 'HARM_CATEGORY_HATE_SPEECH',       threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+] as const;
+
+const GOOGLE_PROVIDER_OPTIONS = {
+    google: { safetySettings: SAFETY_SETTINGS as unknown as Array<{ category: string; threshold: string }> },
+};
 
 export const dynamic = 'force-dynamic';
 
@@ -61,6 +77,7 @@ async function runAssessor(messages: Array<{ role: string; content: string }>): 
             model: google(`models/${MODEL}`),
             system: ASSESSOR_PROMPT,
             messages: messages,
+            providerOptions: GOOGLE_PROVIDER_OPTIONS,
         });
 
         const text = result.text.trim();
@@ -134,6 +151,15 @@ export async function POST(req: Request) {
             cleanMessages.push({ role: 'user', content: 'START_SESSION' });
         }
 
+        // ── Crisis gate: skip LLM for explicit self-harm language ──
+        const lastUserMsg = [...cleanMessages].reverse().find((m: any) => m.role === 'user')?.content || '';
+        if (lastUserMsg && lastUserMsg !== 'START_SESSION' && detectCrisis(lastUserMsg)) {
+            console.log('Crisis gate tripped — bypassing LLM.');
+            return new Response(CRISIS_RESPONSE, {
+                headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+            });
+        }
+
         // ── STEP 1: Run Assessor (non-streaming, fast) ──
         const isStartSession = cleanMessages.length === 1 && cleanMessages[0].content === 'START_SESSION';
         let assessmentContext = '';
@@ -156,6 +182,7 @@ export async function POST(req: Request) {
             model: google(`models/${MODEL}`),
             system: therapistSystemPrompt,
             messages: cleanMessages,
+            providerOptions: GOOGLE_PROVIDER_OPTIONS,
         });
 
         console.log('Stream created successfully.');
