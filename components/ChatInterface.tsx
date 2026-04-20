@@ -27,22 +27,14 @@ export function ChatInterface({
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
+  const [error, setError] = useState<{ message: string; retry: () => void } | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const sendMessage = async (content: string, isStartSession = false) => {
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content,
-    };
-
-    const newMessages = [...messages, userMessage];
-    if (!isStartSession) {
-      setMessages(newMessages);
-    }
+  const callApi = async (payloadMessages: Message[], isStartSession: boolean) => {
+    setError(null);
     setIsLoading(true);
 
     try {
@@ -50,7 +42,7 @@ export function ChatInterface({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: newMessages.map((m) => ({
+          messages: payloadMessages.map((m) => ({
             role: m.role,
             content: m.content,
           })),
@@ -58,7 +50,14 @@ export function ChatInterface({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get response');
+        let serverMessage = 'Bir şeyler ters gitti. Tekrar dener misin?';
+        try {
+          const body = await response.json();
+          if (body?.error) serverMessage = body.error;
+        } catch {
+          // non-JSON body, fall back to default
+        }
+        throw new Error(serverMessage);
       }
 
       const reader = response.body?.getReader();
@@ -82,15 +81,35 @@ export function ChatInterface({
       if (isStartSession) {
         setMessages([assistantMessage]);
       } else {
-        setMessages([...newMessages, assistantMessage]);
+        setMessages([...payloadMessages, assistantMessage]);
       }
 
       onMessageSent('ai', assistantContent);
-    } catch (error) {
-      console.error('Chat error:', error);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Bağlantı hatası. Tekrar dener misin?';
+      console.error('Chat error:', err);
+      setError({
+        message,
+        retry: () => callApi(payloadMessages, isStartSession),
+      });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const sendMessage = async (content: string, isStartSession = false) => {
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content,
+    };
+
+    const newMessages = [...messages, userMessage];
+    if (!isStartSession) {
+      setMessages(newMessages);
+    }
+
+    await callApi(newMessages, isStartSession);
   };
 
   useEffect(() => {
@@ -131,7 +150,7 @@ export function ChatInterface({
             }`}
           >
             <div
-              className={`max-w-[80%] p-4 rounded-2xl ${
+              className={`max-w-[80%] p-4 rounded-2xl whitespace-pre-wrap ${
                 message.role === 'user'
                   ? 'bg-sage-600 text-white'
                   : 'bg-sage-100 text-sage-800'
@@ -143,8 +162,28 @@ export function ChatInterface({
         ))}
         {isLoading && (
           <div className="flex justify-start">
-            <div className="bg-sage-100 text-sage-800 p-4 rounded-2xl">
-              <span className="animate-pulse">...</span>
+            <div className="bg-sage-100 text-sage-800 px-4 py-3 rounded-2xl flex items-center gap-1.5">
+              <span className="w-2 h-2 bg-sage-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-2 h-2 bg-sage-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-2 h-2 bg-sage-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
+          </div>
+        )}
+        {error && (
+          <div className="flex justify-start">
+            <div className="max-w-[80%] bg-rose-50 border border-rose-200 text-rose-800 p-4 rounded-2xl">
+              <p className="text-sm">{error.message}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  const retry = error.retry;
+                  setError(null);
+                  retry();
+                }}
+                className="mt-2 px-3 py-1.5 text-sm bg-rose-600 text-white rounded-lg hover:bg-rose-700"
+              >
+                Tekrar dene
+              </button>
             </div>
           </div>
         )}
