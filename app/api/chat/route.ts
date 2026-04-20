@@ -235,7 +235,7 @@ interface Assessment {
 async function runAssessor(messages: Array<{ role: string; content: string }>): Promise<Assessment | null> {
     try {
         const result = await generateText({
-            model: google('models/gemini-2.0-flash'),
+            model: google('models/gemini-2.5-flash'),
             system: ASSESSOR_PROMPT,
             messages: messages,
         });
@@ -322,7 +322,7 @@ export async function POST(req: Request) {
         const therapistSystemPrompt = THERAPIST_PROMPT + assessmentContext;
 
         const result = streamText({
-            model: google('models/gemini-2.0-flash'),
+            model: google('models/gemini-2.5-flash'),
             system: therapistSystemPrompt,
             messages: cleanMessages,
         });
